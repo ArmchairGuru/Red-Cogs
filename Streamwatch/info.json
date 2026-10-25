@@ -1,0 +1,12 @@
+{
+  "author": ["ACG"],
+  "name": "StreamWatch",
+  "short": "Detects when members start or stop streaming.",
+  "description": "Listens for presence updates and checks the activities array for type 1 (streaming). Announces going live and optionally assigns a live role.",
+  "end_user_data_statement": "This cog stores only guild settings (channel and role IDs). No personal user data is persisted.",
+  "install_msg": "Thanks for installing StreamWatch! Enable the Presence and Server Members intents, then use `[p]streamwatch` to configure.",
+  "min_bot_version": "3.5.0",
+  "requirements": [],
+  "tags": ["streaming", "twitch", "youtube", "presence"],
+  "type": "COG"
+}
