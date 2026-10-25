@@ -1,6 +1,6 @@
 Basic repository for Red Discord Bot Cogs (plugins)
 
-[p] repo add Cogs https://github.com/ArmchairGuru/Cogs
+[p] repo add Red-Cogs https://github.com/ArmchairGuru/Red-Cogs
 
 Streamwatch - Checks discord members using presence to see if they started a live stream.  
 The cog tracks who is currently live in memory, so changing a stream title or game doesn’t trigger a second announcement.  
