@@ -5,7 +5,7 @@ from redbot.core import Config, commands
 from redbot.core.bot import Red
 
 
-class StreamWatch(commands.Cog):
+class streamWatch(commands.Cog):
     """Detects when members start/stop streaming (Activity type 1)."""
 
     def __init__(self, bot: Red):
