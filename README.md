@@ -1,6 +1,6 @@
 Basic repository for Red Discord Bot Cogs (plugins)
 
-[p]repo add Red-Cogs https://github.com/ArmchairGuru/acg-cogs   
+[p]repo add acg-cogs https://github.com/ArmchairGuru/acg-cogs   
 [p]cog install acg-cogs cogname  
   
 <B>streamwatch</B> - Checks discord members using presence to see if they started a live stream.  
