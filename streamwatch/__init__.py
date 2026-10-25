@@ -1,6 +1,6 @@
 from redbot.core.bot import Red
 
-from .streamwatch import streamWatch
+from .streamwatch import StreamWatch
 
 
 async def setup(bot: Red) -> None:
