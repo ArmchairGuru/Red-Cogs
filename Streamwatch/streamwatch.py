@@ -56,6 +56,10 @@ class StreamWatch(commands.Cog):
             self._live.discard(key)
             await self._went_offline(after, settings)
 
+    
+    STREAM_GRACE_SECONDS = 10800  # a gap shorter than this counts as a reconnect, not a new stream
+    _last_stream_seen = {}      # member.id -> timestamp of the last streaming presence update
+
     async def _went_live(self, member, stream, settings):
         guild = member.guild
 
@@ -70,8 +74,15 @@ class StreamWatch(commands.Cog):
         if not channel or not channel.permissions_for(guild.me).send_messages:
             return
 
+        # Stop duplicate announcements caused by YouTube reconnecting a stream
+        now = discord.utils.utcnow().timestamp()
+        last_seen = _last_stream_seen.get(member.id)
+        _last_stream_seen[member.id] = now
+        if last_seen is not None and (now - last_seen) < STREAM_GRACE_SECONDS:
+            return
+
         embed = discord.Embed(
-            title=stream.details or stream.name or "Untitled Stream",
+            title=stream.details or stream.name or "No title",
             url=stream.url,
             colour=discord.Colour.purple(),
         )
@@ -86,14 +97,18 @@ class StreamWatch(commands.Cog):
         if stream.platform:
             embed.add_field(name="Platform", value=stream.platform, inline=True)
 
-        # Live stream preview (Twitch)
+        # Live stream preview
+        cache_bust = int(now)
         twitch_name = getattr(stream, "twitch_name", None)
         if not twitch_name and stream.url and "twitch.tv/" in stream.url:
             twitch_name = stream.url.rstrip("/").split("/")[-1]
         if twitch_name:
             embed.set_image(
-                url=f"https://static-cdn.jtvnw.net/previews-ttv/live_user_{twitch_name.lower()}-1280x720.jpg?t={int(discord.utils.utcnow().timestamp())}"
+                url=f"https://static-cdn.jtvnw.net/previews-ttv/live_user_{twitch_name.lower()}-1280x720.jpg?t={cache_bust}"
             )
+        elif stream.url and "v=" in stream.url:
+            video_id = stream.url.split("v=")[-1].split("&")[0]
+            embed.set_image(url=f"https://i.ytimg.com/vi/{video_id}/maxresdefault_live.jpg?t={cache_bust}")
 
         view = discord.ui.View()
         view.add_item(
