@@ -105,19 +105,6 @@ class StreamWatch(commands.Cog):
         )
 
         await channel.send(embed=embed, view=view)
-        
-     #   embed = discord.Embed(
-     #       title=f"🔴 {member.display_name} is live!",
-     #       description=stream.details or stream.name or "No title",
-     #       url=stream.url,
-     #       colour=discord.Colour.purple(),
-     #   )
-     #   embed.set_thumbnail(url=member.display_avatar.url)
-     #   if stream.game:
-     #       embed.add_field(name="Playing", value=stream.game)
-     #   if stream.platform:
-     #       embed.add_field(name="Platform", value=stream.platform)
-     #   await channel.send(embed=embed)
 
     async def _went_offline(self, member, settings):
         role = member.guild.get_role(settings["live_role"]) if settings["live_role"] else None
