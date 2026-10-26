@@ -5,6 +5,8 @@ import discord
 from redbot.core import Config, commands
 from redbot.core.bot import Red
 
+STREAM_GRACE_SECONDS = 10800  # a gap shorter than this counts as a reconnect, not a new stream
+  _last_stream_seen = {}      # member.id -> timestamp of the last streaming presence update
 
 class StreamWatch(commands.Cog):
     """Detects when members start/stop streaming (Activity type 1)."""
@@ -56,10 +58,6 @@ class StreamWatch(commands.Cog):
         elif not stream and key in self._live:
             self._live.discard(key)
             await self._went_offline(after, settings)
-
-    
-    STREAM_GRACE_SECONDS = 10800  # a gap shorter than this counts as a reconnect, not a new stream
-    _last_stream_seen = {}      # member.id -> timestamp of the last streaming presence update
 
     async def _went_live(self, member, stream, settings):
         guild = member.guild
