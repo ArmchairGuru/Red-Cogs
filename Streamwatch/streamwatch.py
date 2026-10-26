@@ -71,17 +71,53 @@ class StreamWatch(commands.Cog):
             return
 
         embed = discord.Embed(
-            title=f"🔴 {member.display_name} is live!",
-            description=stream.details or stream.name or "No title",
+            title=stream.details or stream.name or "Untitled Stream",
             url=stream.url,
             colour=discord.Colour.purple(),
         )
+        embed.set_author(
+            name=f"{member.display_name} is now live!",
+            url=stream.url,
+            icon_url=member.display_avatar.url,
+        )
         embed.set_thumbnail(url=member.display_avatar.url)
         if stream.game:
-            embed.add_field(name="Playing", value=stream.game)
+            embed.add_field(name="Playing", value=stream.game, inline=True)
         if stream.platform:
-            embed.add_field(name="Platform", value=stream.platform)
-        await channel.send(embed=embed)
+            embed.add_field(name="Platform", value=stream.platform, inline=True)
+
+        # Live stream preview (Twitch)
+        twitch_name = getattr(stream, "twitch_name", None)
+        if not twitch_name and stream.url and "twitch.tv/" in stream.url:
+            twitch_name = stream.url.rstrip("/").split("/")[-1]
+        if twitch_name:
+            embed.set_image(
+                url=f"https://static-cdn.jtvnw.net/previews-ttv/live_user_{twitch_name.lower()}-1280x720.jpg?t={int(discord.utils.utcnow().timestamp())}"
+            )
+
+        view = discord.ui.View()
+        view.add_item(
+            discord.ui.Button(
+                label="Watch Stream",
+                style=discord.ButtonStyle.link,
+                url=stream.url,
+            )
+        )
+
+        await channel.send(embed=embed, view=view)
+        
+     #   embed = discord.Embed(
+     #       title=f"🔴 {member.display_name} is live!",
+     #       description=stream.details or stream.name or "No title",
+     #       url=stream.url,
+     #       colour=discord.Colour.purple(),
+     #   )
+     #   embed.set_thumbnail(url=member.display_avatar.url)
+     #   if stream.game:
+     #       embed.add_field(name="Playing", value=stream.game)
+     #   if stream.platform:
+     #       embed.add_field(name="Platform", value=stream.platform)
+     #   await channel.send(embed=embed)
 
     async def _went_offline(self, member, settings):
         role = member.guild.get_role(settings["live_role"]) if settings["live_role"] else None
