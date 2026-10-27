@@ -6,7 +6,7 @@ from redbot.core import Config, commands
 from redbot.core.bot import Red
 
 STREAM_GRACE_SECONDS = 10800  # a gap shorter than this counts as a reconnect, not a new stream
-  _last_stream_seen = {}      # member.id -> timestamp of the last streaming presence update
+_last_stream_seen = {}      # member.id -> timestamp of the last streaming presence update
 
 class StreamWatch(commands.Cog):
     """Detects when members start/stop streaming (Activity type 1)."""
