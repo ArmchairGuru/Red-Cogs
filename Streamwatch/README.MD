@@ -1,4 +1,5 @@
-- [p]streamwatch channel [channel name] sets channel name for announce postings.
-- [p]streamwatch role [discord role ID] sets optional role for streaming, removed when user stops streaming.
+- [p]streamwatch toggle [toggle cog status on or off]
+- [p]streamwatch channel [channel name] sets channel name for announce postings.  
+- [p]streamwatch role [discord role ID] sets optional role for streaming, removed when user stops streaming.  
 - [p]streamwatch settings , Show current settings.  
 - [p]streamwatch test [stream url] test function for embed or function testing.  
