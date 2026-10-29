@@ -1,4 +1,4 @@
-[p]streamwatch channel [channel name]  
-[p]streamwatch role [discord role ID]  
-[p]streamwatch test [stream URL]  
-[p]streamwatch settings
+- [p]streamwatch channel [channel name] sets channel name for announce postings.
+- [p]streamwatch role [discord role ID] sets optional role for streaming, removed when user stops streaming.
+- [p]streamwatch settings , Show current settings.  
+- [p]streamwatch test [stream url] test function for embed or function testing.  
