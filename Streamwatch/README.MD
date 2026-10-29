@@ -9,6 +9,12 @@ Sets channel name for announce postings.
   
 - [p]streamwatch role [discord role ID]  
 Sets optional role for streaming, removed when user stops streaming.   
+
+- [p]streamwatch everyone  
+Turns the @everyone ping on or off.
+
+- [p]streamwatch pingrole @Role  
+Sets a role to ping. Leave the role off to clear it.
   
 - [p]streamwatch test [stream url]  
 Test function for embed or function testing, posts to the chosen announcement channel.  
