@@ -14,7 +14,7 @@ Sets optional role for streaming, removed when user stops streaming.
 Turns the @everyone ping on or off.
 
 - [p]streamwatch pingrole @Role  
-Sets a role to ping. Leave the role off to clear it.
+Sets a role to ping. Leave the role off to clear it. [ [p]streamwatch pingrole]
   
 - [p]streamwatch test [stream url]  
 Test function for embed or function testing, posts to the chosen announcement channel.  
