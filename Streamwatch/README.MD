@@ -11,4 +11,4 @@ Sets channel name for announce postings.
 Sets optional role for streaming, removed when user stops streaming.   
   
 - [p]streamwatch test [stream url]  
-Test function for embed or function testing.  
+Test function for embed or function testing, posts to the chosen announcement channel.  
