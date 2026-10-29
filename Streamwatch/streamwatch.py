@@ -22,6 +22,8 @@ class StreamWatch(commands.Cog):
             enabled=False,
             channel=None,    # announcement channel id
             live_role=None,  # optional role id given while live
+            ping_everyone=False,  # mention @everyone in go-live announcements
+            ping_role=None,       # optional role id to mention in go-live announcements
         )
         # (guild_id, user_id) of members currently known to be live.
         # Prevents re-announcing when stream title/game changes.
@@ -80,6 +82,23 @@ class StreamWatch(commands.Cog):
         )
         return embed, view
 
+    @staticmethod
+    def _build_ping(guild: discord.Guild, settings: dict):
+        """Build the message content + AllowedMentions for the @everyone / @role ping."""
+        role = guild.get_role(settings["ping_role"]) if settings["ping_role"] else None
+        parts = []
+        if settings["ping_everyone"]:
+            parts.append("@everyone")
+        if role:
+            parts.append(role.mention)
+        content = " ".join(parts) or None
+        mentions = discord.AllowedMentions(
+            everyone=bool(settings["ping_everyone"]),
+            roles=[role] if role else False,
+            users=False,
+        )
+        return content, mentions
+
     # ------------------------------------------------------------------ listener
 
     @commands.Cog.listener()
@@ -125,7 +144,8 @@ class StreamWatch(commands.Cog):
             return
 
         embed, view = self._build_announcement(member, stream, now)
-        await channel.send(embed=embed, view=view)
+        content, mentions = self._build_ping(guild, settings)
+        await channel.send(content=content, embed=embed, view=view, allowed_mentions=mentions)
 
     async def _went_offline(self, member, settings):
         role = member.guild.get_role(settings["live_role"]) if settings["live_role"] else None
@@ -173,16 +193,32 @@ class StreamWatch(commands.Cog):
         await self.config.guild(ctx.guild).live_role.set(role.id if role else None)
         await ctx.send(f"Live role: {role.name if role else 'cleared'}.")
 
+    @streamwatch.command(name="everyone")
+    async def sw_everyone(self, ctx: commands.Context):
+        """Toggle pinging @everyone in go-live announcements."""
+        current = await self.config.guild(ctx.guild).ping_everyone()
+        await self.config.guild(ctx.guild).ping_everyone.set(not current)
+        await ctx.send(f"@everyone ping is now {'enabled' if not current else 'disabled'}.")
+
+    @streamwatch.command(name="pingrole")
+    async def sw_pingrole(self, ctx: commands.Context, role: Optional[discord.Role] = None):
+        """Set a role to ping in go-live announcements (omit to clear)."""
+        await self.config.guild(ctx.guild).ping_role.set(role.id if role else None)
+        await ctx.send(f"Ping role: {role.name if role else 'cleared'}.")
+
     @streamwatch.command(name="settings")
     async def sw_settings(self, ctx: commands.Context):
         """Show current settings."""
         s = await self.config.guild(ctx.guild).all()
         ch = ctx.guild.get_channel(s["channel"]) if s["channel"] else None
         role = ctx.guild.get_role(s["live_role"]) if s["live_role"] else None
+        ping_role = ctx.guild.get_role(s["ping_role"]) if s["ping_role"] else None
         await ctx.send(
             f"**Enabled:** {s['enabled']}\n"
             f"**Channel:** {ch.mention if ch else 'not set'}\n"
-            f"**Live role:** {role.name if role else 'not set'}"
+            f"**Live role:** {role.name if role else 'not set'}\n"
+            f"**Ping @everyone:** {s['ping_everyone']}\n"
+            f"**Ping role:** {ping_role.name if ping_role else 'not set'}"
         )
 
     @streamwatch.command(name="test")
@@ -193,9 +229,10 @@ class StreamWatch(commands.Cog):
         Defaults to a Twitch URL. Pass a YouTube watch?v= URL to test the YouTube preview.
         Posts to the configured announcement channel, or the current channel if none is set.
         Ignores the enabled toggle, the reconnect guard and the live role.
+        Shows the configured ping text but never actually notifies anyone.
         """
-        channel_id = await self.config.guild(ctx.guild).channel()
-        channel = ctx.guild.get_channel(channel_id) if channel_id else ctx.channel
+        settings = await self.config.guild(ctx.guild).all()
+        channel = ctx.guild.get_channel(settings["channel"]) if settings["channel"] else ctx.channel
         if not channel or not channel.permissions_for(ctx.guild.me).send_messages:
             return await ctx.send("I can't send messages in the announcement channel.")
 
@@ -214,6 +251,12 @@ class StreamWatch(commands.Cog):
 
         now = discord.utils.utcnow().timestamp()
         embed, view = self._build_announcement(ctx.author, fake_stream, now)
-        await channel.send(embed=embed, view=view)
+        content, _ = self._build_ping(ctx.guild, settings)
+        await channel.send(
+            content=content,
+            embed=embed,
+            view=view,
+            allowed_mentions=discord.AllowedMentions.none(),  # test never pings anyone
+        )
         if channel != ctx.channel:
             await ctx.send(f"Test announcement sent to {channel.mention}.")
