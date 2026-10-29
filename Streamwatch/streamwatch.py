@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 from typing import Optional
 
 import time
@@ -35,6 +36,49 @@ class StreamWatch(commands.Cog):
             if activity.type is discord.ActivityType.streaming:  # value 1
                 return activity
         return None
+
+    @staticmethod
+    def _build_announcement(member, stream, now: float):
+        """Build the go-live embed + Watch Stream button.
+        Shared by real go-live events and the test command."""
+        embed = discord.Embed(
+            title=stream.details or stream.name or "No title",
+            url=stream.url,
+            colour=discord.Colour.purple(),
+        )
+        embed.set_author(
+            name=f"{member.display_name} is now live!",
+            url=stream.url,
+            icon_url=member.display_avatar.url,
+        )
+        embed.set_thumbnail(url=member.display_avatar.url)
+        if stream.game:
+            embed.add_field(name="Playing", value=stream.game, inline=True)
+        if stream.platform:
+            embed.add_field(name="Platform", value=stream.platform, inline=True)
+
+        # Live stream preview
+        cache_bust = int(now)
+        twitch_name = getattr(stream, "twitch_name", None)
+        if not twitch_name and stream.url and "twitch.tv/" in stream.url:
+            twitch_name = stream.url.rstrip("/").split("/")[-1]
+        if twitch_name:
+            embed.set_image(
+                url=f"https://static-cdn.jtvnw.net/previews-ttv/live_user_{twitch_name.lower()}-1280x720.jpg?t={cache_bust}"
+            )
+        elif stream.url and "v=" in stream.url:
+            video_id = stream.url.split("v=")[-1].split("&")[0]
+            embed.set_image(url=f"https://i.ytimg.com/vi/{video_id}/maxresdefault_live.jpg?t={cache_bust}")
+
+        view = discord.ui.View()
+        view.add_item(
+            discord.ui.Button(
+                label="Watch Stream",
+                style=discord.ButtonStyle.link,
+                url=stream.url,
+            )
+        )
+        return embed, view
 
     # ------------------------------------------------------------------ listener
 
@@ -80,44 +124,7 @@ class StreamWatch(commands.Cog):
         if last_seen is not None and (now - last_seen) < STREAM_GRACE_SECONDS:
             return
 
-        embed = discord.Embed(
-            title=stream.details or stream.name or "No title",
-            url=stream.url,
-            colour=discord.Colour.purple(),
-        )
-        embed.set_author(
-            name=f"{member.display_name} is now live!",
-            url=stream.url,
-            icon_url=member.display_avatar.url,
-        )
-        embed.set_thumbnail(url=member.display_avatar.url)
-        if stream.game:
-            embed.add_field(name="Playing", value=stream.game, inline=True)
-        if stream.platform:
-            embed.add_field(name="Platform", value=stream.platform, inline=True)
-
-        # Live stream preview
-        cache_bust = int(now)
-        twitch_name = getattr(stream, "twitch_name", None)
-        if not twitch_name and stream.url and "twitch.tv/" in stream.url:
-            twitch_name = stream.url.rstrip("/").split("/")[-1]
-        if twitch_name:
-            embed.set_image(
-                url=f"https://static-cdn.jtvnw.net/previews-ttv/live_user_{twitch_name.lower()}-1280x720.jpg?t={cache_bust}"
-            )
-        elif stream.url and "v=" in stream.url:
-            video_id = stream.url.split("v=")[-1].split("&")[0]
-            embed.set_image(url=f"https://i.ytimg.com/vi/{video_id}/maxresdefault_live.jpg?t={cache_bust}")
-
-        view = discord.ui.View()
-        view.add_item(
-            discord.ui.Button(
-                label="Watch Stream",
-                style=discord.ButtonStyle.link,
-                url=stream.url,
-            )
-        )
-
+        embed, view = self._build_announcement(member, stream, now)
         await channel.send(embed=embed, view=view)
 
     async def _went_offline(self, member, settings):
@@ -177,3 +184,36 @@ class StreamWatch(commands.Cog):
             f"**Channel:** {ch.mention if ch else 'not set'}\n"
             f"**Live role:** {role.name if role else 'not set'}"
         )
+
+    @streamwatch.command(name="test")
+    async def sw_test(self, ctx: commands.Context, url: Optional[str] = None):
+        """Post a fake go-live announcement to test the embed.
+
+        Usage: [p]streamwatch test [stream url]
+        Defaults to a Twitch URL. Pass a YouTube watch?v= URL to test the YouTube preview.
+        Posts to the configured announcement channel, or the current channel if none is set.
+        Ignores the enabled toggle, the reconnect guard and the live role.
+        """
+        channel_id = await self.config.guild(ctx.guild).channel()
+        channel = ctx.guild.get_channel(channel_id) if channel_id else ctx.channel
+        if not channel or not channel.permissions_for(ctx.guild.me).send_messages:
+            return await ctx.send("I can't send messages in the announcement channel.")
+
+        url = url or "https://www.twitch.tv/twitch"
+        platform = "YouTube" if ("youtube.com" in url or "youtu.be" in url) else "Twitch"
+
+        # Stand-in for discord.Streaming with the same attributes the embed uses
+        fake_stream = SimpleNamespace(
+            name="Test Stream",
+            details="This is a test announcement",
+            game="Just Chatting",
+            platform=platform,
+            url=url,
+            twitch_name=None,
+        )
+
+        now = discord.utils.utcnow().timestamp()
+        embed, view = self._build_announcement(ctx.author, fake_stream, now)
+        await channel.send(embed=embed, view=view)
+        if channel != ctx.channel:
+            await ctx.send(f"Test announcement sent to {channel.mention}.")
