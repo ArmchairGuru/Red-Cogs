@@ -1,7 +1,7 @@
 {
     "author" : ["ACG"],
     "install_msg" : "Thanks for installing.",
-    "name" : "Red-Cogs",
+    "name" : "acg-cogs",
     "short" : "Cogs for discord and other stuff.",
     "description" : "Cogs for discord and other stuff."
 }
